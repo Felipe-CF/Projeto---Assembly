@@ -1,0 +1,22 @@
+.text
+# pitch 70 e 127 instrumento
+
+main: addi $8 $0 20
+li $a0, 40     # pitch (nota MIDI)
+li $a1, 500      # duração em milissegundos
+li $a2, 90        # instrumento (patch MIDI)
+li $a3, 100      # volume (0-127)
+li $v0, 31       # Código de serviço 31
+syscall
+
+loop:beq $8 $0 fim
+# Carregue os valores dos parâmetros
+	beq $8 10 mudasom
+som:	syscall
+	addi $8 $8 -1
+
+j loop
+
+muda_som:
+fim:addi $2 $0 10
+syscall
