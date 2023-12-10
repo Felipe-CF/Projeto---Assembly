@@ -30,7 +30,7 @@ stand_by: bne $0 $0 fim
 
 start_jogo: jal carregar_robo
 
-rodando_o_jogo: beq $24 $0 fim
+rodando_o_jogo: beq $24 $0 desintegra_pj
 	beq $25 $0 caveira_destruida
 	lui $12 0xffff # endereço da verificação de tecla pressionada 
 	blt $23 20 movimentação
@@ -58,18 +58,17 @@ fimTimer:
 volta: jr $31
 
 # ==========	Timers
-time_lapse1: addi $20 $0 50000
+time_lapse1: addi $20 $0 40000
 fortl: beq $20 $0 fimTimer
 	nop
 	addi $20 $20 -1
 	j fortl
 
-timer_jogo:addi $20 $0 50000
+timer_jogo:addi $20 $0 40000
 fort2: beq $20 $0 fimTimer
 	nop
 	addi $20 $20 -1
 	j fort2
-
 timer_canhao: addi $20 $0 10000
 fort3: beq $20 $0 fimTimer
 	nop
@@ -91,15 +90,13 @@ fort5: beq $20 $0 fimTimer
 #	 |_|_|_|
 #	 |_|_|_| 
 tiro_canhao: 
-lui $13 0x1001 
+	lui $13 0x1001 
 	addi $13 $13 25508 
 	addi $17 $0 0x1cf6f7  
 	addi $8 $0 104
-	add $4 $0 $31
+	add $9 $0 $31
 # posição da energia do canhão do robo
-	lui $14 0x1001
-	addi $14 $14 25516 # 107 colunas, 32 linhas
- 
+	
 movimento_canhao: beq $8 $0 carregar_novo_tiro
 # checar se alguma tecla foi digitada
 	lw $11 0($12)
@@ -140,7 +137,7 @@ sem_ação:
 	j movimento_canhao
 carregar_novo_tiro: 
 	# volta para rodando_o_jogo
-	add $31 $0 $4
+	add $31 $0 $9
 	j volta 
 
 #===========	Descarrega canhao 
@@ -240,14 +237,26 @@ em_pe: jal faz_pj
 atirar: bne $19 $0 volta # só atira quando tiver em pé
 	addi $14 $0 0xbfbdcb # cor da munição
 	addi $8 $0 0
-	add $4 $0 $31
+	add $9 $0 $31
+# SOM DO DISPARO
+	addi $4 $0 50     # pitch (nota MIDI)
+	addi $5 $0 400      # duração em milissegundos
+	addi $6 $0 127       # instrumento (patch MIDI)
+	addi $7 $0 100
+	addi $2 $0 31       # Código de serviço 31
+	syscall
+	
 loop_atirar: bne $0 $0 fim 
 	lw $11 3104($21)
 	bne $14 $11 não_acertou
-	# se acertou
+# se acertou, faz o som do impacto e volta 
+# para rodando_o_jogo
+	addi $4 $0 69
+	addi $6 $0 127 
+	syscall
 	addi $25 $25 -1
 	add $21 $21 $8
-	add $31 $0 $4
+	add $31 $0 $9
 	j volta
 não_acertou:
 	sw $14 3096($21)
@@ -493,6 +502,126 @@ apaga_luzes_poste: addi $9 $9 -1936
 
 
 # =========== FIM DE JOGO
+# --------	PJ DERROTADO
+time_desintegra: addi $20 $0 20000
+loop_timer_desin: beq $20 $0 volta
+	nop
+	addi $20 $20 -1
+	j loop_timer_desin
+desintegra_pj:
+	addi $21 $21 512
+	addi $10 $0 6
+# a energia consome o tronco 
+# de cima para baixo
+desintegra_pt1: 
+	beq $10 $0 desintegra_pt2
+	jal time_desintegra
+	sw $17 0($21)
+	sw $17 516($21)
+	addi $21 $21 1024
+	addi $10 $10 -1
+	jal time_desintegra
+	syscall
+	j desintegra_pt1
+# a energia os pés	
+desintegra_pt2: addi $21 $21 -1020
+	sw $17 516($21)
+	sw $17 -8($21)
+	sw $17 504($21)
+# a energia faz o caminho contrário
+desintegra_pt3: addi $10 $0 4
+loop_pt3: beq $10 $0 desintegra_pt4
+	jal time_desintegra
+	sw $17 0($21)
+	sw $17 508($21)
+	jal time_desintegra
+	addi $10 $10 -1
+	addi $21 $21 -1024
+	j loop_pt3
+# a energia toma de conta do pj
+desintegra_pt4:
+	sw $17 508($21)
+	jal time_desintegra
+	sw $17 -516($21)
+	jal time_desintegra
+	sw $17 -1024($21)
+	jal time_desintegra
+
+# volta ao px de centro do pj
+	addi $21 $21 -1028
+# carrega a shadow e dar store
+# até as pernas
+	addi $10 $0 10
+desaparece_pj1: beq $10 $0 desaparece_pj2
+	lw $11 32768($21)
+	sw $11 0($21)
+	lw $11 32772($21)
+	sw $11 4($21)
+	addi $10 $10 -1
+	addi $21 $21 512
+	j desaparece_pj1
+	
+desaparece_pj2: lw $11 32764($21)
+	sw $11 -4($21)
+	lw $11 32768($21)
+	sw $11 0($21)
+	lw $11 32772($21)
+	sw $11 4($21)
+# ultima linha do pj
+	addi $21 $21 512
+	lw $11 32764($21)
+	sw $11 -4($21)
+	lw $11 32768($21)
+	sw $11 0($21)
+	lw $11 32772($21)
+	sw $11 4($21)
+	lw $11 32776($21)
+	sw $11 8($21)
+# som dele desaparecendo
+	addi $2 $0 31       # Código de serviço 31
+	addi $4 $0 51     # pitch (nota MIDI)
+	addi $5 $0 1000      # duração em milissegundos
+	addi $6 $0 120       # instrumento (patch MIDI)
+	addi $7 $0 100      # volume (0-127)
+	syscall
+# personagem desapareceu completamente
+# agora resta fazer a animação da arma
+# caindo
+	addi $21 $21 -3064
+	addi $10 $0 5
+	addi $14 $0 0xbfbdcb # cor da arma
+	
+loop_arma_caindo: beq $10 $0 fim
+# apaga 1° linha
+	lw $11 32768($21)
+	sw $11 0($21)
+	lw $11 32772($21)
+	sw $11 4($21)
+	lw $11 32776($21)
+	sw $11 8($21)
+	lw $11 32780($21)
+	sw $11 12($21)
+# apaga 2°linha
+	lw $11 33280($21)
+	sw $11 512($21)
+	lw $11 33284($21)
+	sw $11 516($21)
+# desce a linha
+	addi $21 $21 512
+# escreve arma dnv
+	sw $14 0($21)
+	sw $14 4($21)
+	sw $14 8($21)
+	sw $14 12($21)
+	sw $14 512($21)
+	sw $14 516($21)
+	jal time_desintegra
+	addi $10 $10 -1
+	j loop_arma_caindo
+	
+	
+	
+#  -------	ROBÔ DERROTADO
 caveira_destruida: lui $9 0x1001
 	addi $9 $9 18872
 	addi $12 $0 0x00
@@ -520,7 +649,6 @@ caveira_destruida: lui $9 0x1001
 	sw $12 -1036($9)
 	sw $12 -1540($9)
 	sw $12 -1548($9)
-	
 # descarregar o canhao
 	addi $9 $9 2540
 	addi $8 $0 7
@@ -542,4 +670,3 @@ loop_descarrega_robo: beq $8 $0 fim
 	addi $9 $9 1024
 	addi $8 $8 -1
 	j loop_descarrega_robo
-	
