@@ -579,9 +579,9 @@ desaparece_pj2: lw $11 32764($21)
 	sw $11 8($21)
 # som dele desaparecendo
 	addi $2 $0 31       # Código de serviço 31
-	addi $4 $0 51     # pitch (nota MIDI)
+	addi $4 $0 50     # pitch (nota MIDI)
 	addi $5 $0 1000      # duração em milissegundos
-	addi $6 $0 120       # instrumento (patch MIDI)
+	addi $6 $0 123       # instrumento (patch MIDI)
 	addi $7 $0 100      # volume (0-127)
 	syscall
 # personagem desapareceu completamente

@@ -1,12 +1,12 @@
 .text
 # pitch 60 e 127 instrumento
 # 30 e 127 = explosão
-
-main: addi $8 $0 13
+# 48 e 123
+main: 
 addi $2 $0 31       # Código de serviço 31
-addi $4 $0 51     # pitch (nota MIDI)
+addi $4 $0 48     # pitch (nota MIDI)
 addi $5 $0 1000      # duração em milissegundos
-addi $6 $0 120       # instrumento (patch MIDI)
+addi $6 $0 127      # instrumento (patch MIDI)
 addi $7 $0 100      # volume (0-127)
 syscall
 
