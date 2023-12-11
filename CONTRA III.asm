@@ -58,13 +58,13 @@ fimTimer:
 volta: jr $31
 
 # ==========	Timers
-time_lapse1: addi $20 $0 40000
+time_lapse1: addi $20 $0 80000
 fortl: beq $20 $0 fimTimer
 	nop
 	addi $20 $20 -1
 	j fortl
 
-timer_jogo:addi $20 $0 40000
+timer_jogo:addi $20 $0 80000
 fort2: beq $20 $0 fimTimer
 	nop
 	addi $20 $20 -1
@@ -239,8 +239,8 @@ atirar: bne $19 $0 volta # só atira quando tiver em pé
 	addi $8 $0 0
 	add $9 $0 $31
 # SOM DO DISPARO
-	addi $4 $0 50     # pitch (nota MIDI)
-	addi $5 $0 400      # duração em milissegundos
+	addi $4 $0 48     # pitch (nota MIDI)
+	addi $5 $0 800      # duração em milissegundos
 	addi $6 $0 127       # instrumento (patch MIDI)
 	addi $7 $0 100
 	addi $2 $0 31       # Código de serviço 31
@@ -579,18 +579,19 @@ desaparece_pj2: lw $11 32764($21)
 	sw $11 8($21)
 # som dele desaparecendo
 	addi $2 $0 31       # Código de serviço 31
-	addi $4 $0 50     # pitch (nota MIDI)
-	addi $5 $0 1000      # duração em milissegundos
+	addi $4 $0 49     # pitch (nota MIDI)
+	addi $5 $0 1500      # duração em milissegundos
 	addi $6 $0 123       # instrumento (patch MIDI)
 	addi $7 $0 100      # volume (0-127)
 	syscall
 # personagem desapareceu completamente
 # agora resta fazer a animação da arma
 # caindo
+	jal time_desintegra
 	addi $21 $21 -3064
 	addi $10 $0 5
 	addi $14 $0 0xbfbdcb # cor da arma
-	
+	syscall
 loop_arma_caindo: beq $10 $0 fim
 # apaga 1° linha
 	lw $11 32768($21)
